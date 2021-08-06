@@ -1,0 +1,27 @@
+name: gitignore.rs
+version: "0.2.0"
+author: ezr <appositum@protonmail.com>
+about: "Fetches .gitignore templates from GitHub's API"
+args:
+    - list:
+        help: "Requests list of all available templates"
+        short: l
+        long: list
+    - templates:
+        help: "Sets the input file to use"
+        index: 1
+        required: true
+        conflicts_with: list
+    - file:
+        help: "Overwrites .gitignore file with output"
+        short: f
+    - append:
+        help: "Appends output to .gitignore file"
+        short: a
+        long: append
+        conflicts_with: file
+    - output:
+        help: "Redirects output to a file or stream (default: stdout)"
+        short: o
+        long: output
+        takes_value: true

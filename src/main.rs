@@ -1,5 +1,5 @@
 use ansi_term::Colour::Red;
-use clap::{Arg, App};
+use clap::{App, load_yaml};
 use reqwest::header::USER_AGENT;
 use serde_json::{self, Value as JsonValue};
 use std::error;
@@ -63,46 +63,8 @@ impl From<tokio::task::JoinError> for GIError {
 
 #[tokio::main]
 async fn main() -> Result<(), GIError> {
-    // NOTE: apparently, clap has support to read from a yaml file.
-    // will try to use that in the future and avoid all this verbosity
-
-    let matches = App::new("gitignore.rs")
-        .version("0.1.0")
-        .author("appositum")
-        .about("Fetches .gitignore templates from GitHub's API")
-        .arg(
-            Arg::with_name("list")
-                .help("Requests list of all available templates")
-                .short("l")
-                .long("list"),
-        )
-        .arg(
-            Arg::with_name("templates")
-                .help("Comma separated list of templates. e.g.: Rust,Python,C")
-                .index(1)
-                .required(true)
-                .conflicts_with("list"),
-        )
-        // TODO
-        .arg(
-            Arg::with_name("file")
-                .help("Overwrites .gitignore file with output")
-                .short("f"),
-        )
-        .arg(
-            Arg::with_name("append")
-                .help("Appends output to .gitignore file")
-                .short("a")
-                .long("append")
-                .conflicts_with("file"),
-        )
-        .arg(
-            Arg::with_name("output")
-                .help("Redirects output to a file or stream (default: stdout)")
-                .short("o")
-                .long("output"),
-        )
-        .get_matches();
+    let yaml = load_yaml!("cli.yml");
+    let matches = App::from(yaml).get_matches();
 
     let api = String::from("https://api.github.com/gitignore/templates");
     let client = reqwest::Client::new();
