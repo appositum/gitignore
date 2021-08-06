@@ -2,10 +2,68 @@ use ansi_term::Colour::{Green, Red};
 use clap::{Arg, App};
 use reqwest::header::USER_AGENT;
 use serde_json::{self, Value as JsonValue};
+use std::error;
+use std::fmt::{self, Display};
 use std::ops::Add;
 
+#[derive(Debug)]
+enum GIError {
+    Json(serde_json::Error),
+    Request(reqwest::Error),
+    TaskJoin(tokio::task::JoinError),
+    TemplateNotFound(Vec<String>),
+}
+
+impl Display for GIError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            GIError::Json(e) => {
+                write!(f, "{} {}", Red.paint("json parse error:"), e)
+            }
+            GIError::Request(e) => {
+                write!(f, "{} {}", Red.paint("request error:"), e)
+            }
+            GIError::TaskJoin(e) => {
+                write!(f, "{} {}", Red.paint("tokio join error:"), e)
+            }
+            GIError::TemplateNotFound(vec) => {
+                write!(f, "{} {:?}", Red.paint("template not found"), vec)
+            }
+        }
+    }
+}
+
+impl error::Error for GIError {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        match self {
+            GIError::Json(e) => Some(e),
+            GIError::Request(e) => Some(e),
+            GIError::TaskJoin(e) => Some(e),
+            GIError::TemplateNotFound(_vec) => None,
+        }
+    }
+}
+
+impl From<serde_json::Error> for GIError {
+    fn from(err: serde_json::Error) -> GIError {
+        GIError::Json(err)
+    }
+}
+
+impl From<reqwest::Error> for GIError {
+    fn from(err: reqwest::Error) -> GIError {
+        GIError::Request(err)
+    }
+}
+
+impl From<tokio::task::JoinError> for GIError {
+    fn from(err: tokio::task::JoinError) -> GIError {
+        GIError::TaskJoin(err)
+    }
+}
+
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<(), GIError> {
     // NOTE: apparently, clap has support to read from a yaml file.
     // will try to use that in the future and avoid all this verbosity
 
@@ -85,9 +143,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 usage
             );
 
-            // TODO: make our own error wrapper type
-            // so we can actually return Err() instead of this hack
-            return Ok(());
+            return Err(GIError::TemplateNotFound(templates_not_found));
         }
 
         let bodies: Vec<_> = urls
@@ -114,12 +170,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         for body in bodies {
             match body.await {
                 Err(e) => {
-                    eprintln!("{} {}", Red.bold().paint("tokio error:"), e.to_string());
-                    return Ok(());
+                    return Err(GIError::TaskJoin(e));
                 }
                 Ok(Err(e)) => {
-                    eprintln!("{} {}", Red.bold().paint("reqwest error:"), e.to_string());
-                    return Ok(());
+                    return Err(GIError::Request(e));
                 }
                 Ok(Ok(b)) => {
                     let template = serde_json::from_str(&b)?;
@@ -142,16 +196,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn request_body(url: String, client: &reqwest::Client) -> Result<String, reqwest::Error> {
-    client
+    Ok(client
         .get(url)
         .header(USER_AGENT, "gitignore.rs")
         .send()
         .await?
         .text()
-        .await
+        .await?)
 }
 
-async fn _get_template(name: String, client: &reqwest::Client) -> Result<String, reqwest::Error> {
+async fn _get_template(name: String, client: &reqwest::Client) -> Result<String, GIError> {
     // NOTE: this looks disgusting. i define this api link in the main function
     // and pass it around as argument to the other request functions.
     // in this `get_template` case, i want to be able to pass only the name of the template
@@ -161,10 +215,9 @@ async fn _get_template(name: String, client: &reqwest::Client) -> Result<String,
     let url = format!("https://api.github.com/gitignore/templates/{}", name);
     let body = request_body(url, client).await?;
 
-    let data: JsonValue = serde_json::from_str(&body[..]).unwrap();
+    let data: JsonValue = serde_json::from_str(&body)?;
     let mut result = String::new();
 
-    // TODO: make an error type to englobe both reqwest and serde errors
     if let JsonValue::String(name) = &data["name"] {
         if let JsonValue::String(source) = &data["source"] {
             result.push_str(&format!("### {} ###\n{}", name, source));
@@ -174,16 +227,12 @@ async fn _get_template(name: String, client: &reqwest::Client) -> Result<String,
     Ok(result)
 }
 
-async fn get_all_templates(
-    url: String,
-    client: &reqwest::Client,
-) -> Result<Vec<String>, reqwest::Error> {
+async fn get_all_templates(url: String, client: &reqwest::Client) -> Result<Vec<String>, GIError> {
     let body = request_body(url, client).await?;
 
     let mut result: Vec<String> = Vec::new();
 
-    // TODO: same thing as previous TODO, make an error type for both
-    if let JsonValue::Array(ts) = serde_json::from_str(&body[..]).unwrap() {
+    if let JsonValue::Array(ts) = serde_json::from_str(&body)? {
         for t in ts {
             if let JsonValue::String(s) = t {
                 result.push(s);
