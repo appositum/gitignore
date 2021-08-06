@@ -13,29 +13,38 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .version("0.1.0")
         .author("appositum")
         .about("Fetches .gitignore templates from GitHub's API")
-        .arg(Arg::with_name("list")
-             .help("Requests list of all available templates")
-             .short("l")
-             .long("list"))
-        .arg(Arg::with_name("templates")
-             .help("Comma separated list of templates. e.g.: Rust,Python,C")
-             .index(1)
-             .required(true)
-             .conflicts_with("list"))
-
+        .arg(
+            Arg::with_name("list")
+                .help("Requests list of all available templates")
+                .short("l")
+                .long("list"),
+        )
+        .arg(
+            Arg::with_name("templates")
+                .help("Comma separated list of templates. e.g.: Rust,Python,C")
+                .index(1)
+                .required(true)
+                .conflicts_with("list"),
+        )
         // TODO
-        .arg(Arg::with_name("file")
-             .help("Overwrites .gitignore file with output")
-             .short("f"))
-        .arg(Arg::with_name("append")
-             .help("Appends output to .gitignore file")
-             .short("a")
-             .long("append")
-             .conflicts_with("file"))
-        .arg(Arg::with_name("output")
-             .help("Redirects output to a file or stream (default: stdout)")
-             .short("o")
-             .long("output"))
+        .arg(
+            Arg::with_name("file")
+                .help("Overwrites .gitignore file with output")
+                .short("f"),
+        )
+        .arg(
+            Arg::with_name("append")
+                .help("Appends output to .gitignore file")
+                .short("a")
+                .long("append")
+                .conflicts_with("file"),
+        )
+        .arg(
+            Arg::with_name("output")
+                .help("Redirects output to a file or stream (default: stdout)")
+                .short("o")
+                .long("output"),
+        )
         .get_matches();
 
     let api = String::from("https://api.github.com/gitignore/templates");
@@ -69,30 +78,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .add("\n\nFor more information try ")
                 .add(&format!("{}", Green.paint("--help"))[..]);
 
-            eprintln!("{} Template(s) not found: {:?}\n\n{}",
-                      Red.bold().paint("error:"),
-                      templates_not_found,
-                      usage);
+            eprintln!(
+                "{} Template(s) not found: {:?}\n\n{}",
+                Red.bold().paint("error:"),
+                templates_not_found,
+                usage
+            );
 
             // TODO: make our own error wrapper type
             // so we can actually return Err() instead of this hack
             return Ok(());
         }
 
-        let bodies: Vec<_> = urls.map(|url| {
-            let client = client.clone();
+        let bodies: Vec<_> = urls
+            .map(|url| {
+                let client = client.clone();
 
-            // TODO: use `request_body` instead of this block,
-            // but types are mistmatching. getting rid of this repetition,
-            // we can drop the `urls` variable and use `get_template` instead
-            tokio::spawn(async move {
-                println!("requesting {}", url);
-                client.get(url)
-                    .header(USER_AGENT, "gitignore.rs")
-                    .send().await?
-                    .text().await
+                // TODO: use `request_body` instead of this block,
+                // but types are mistmatching. getting rid of this repetition,
+                // we can drop the `urls` variable and use `get_template` instead
+                tokio::spawn(async move {
+                    println!("requesting {}", url);
+                    client
+                        .get(url)
+                        .header(USER_AGENT, "gitignore.rs")
+                        .send()
+                        .await?
+                        .text()
+                        .await
+                })
             })
-        }).collect();
+            .collect();
 
         let mut templates: Vec<JsonValue> = Vec::new();
 
@@ -101,11 +117,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Err(e) => {
                     eprintln!("{} {}", Red.bold().paint("tokio error:"), e.to_string());
                     return Ok(());
-                },
+                }
                 Ok(Err(e)) => {
                     eprintln!("{} {}", Red.bold().paint("reqwest error:"), e.to_string());
                     return Ok(());
-                },
+                }
                 Ok(Ok(b)) => {
                     let template = serde_json::from_str(&b[..])?;
                     templates.push(template);
@@ -126,19 +142,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-async fn request_body(url: String, client: &reqwest::Client)
-                      -> Result<String, reqwest::Error>
-{
+async fn request_body(url: String, client: &reqwest::Client) -> Result<String, reqwest::Error> {
     client
         .get(url)
         .header(USER_AGENT, "gitignore.rs")
-        .send().await?
-        .text().await
+        .send()
+        .await?
+        .text()
+        .await
 }
 
-async fn _get_template(name: String, client: &reqwest::Client)
-                      -> Result<String, reqwest::Error>
-{
+async fn _get_template(name: String, client: &reqwest::Client) -> Result<String, reqwest::Error> {
     // NOTE: this looks disgusting. i define this api link in the main function
     // and pass it around as argument to the other request functions.
     // in this `get_template` case, i want to be able to pass only the name of the template
@@ -154,19 +168,17 @@ async fn _get_template(name: String, client: &reqwest::Client)
     // TODO: make an error type to englobe both reqwest and serde errors
     if let JsonValue::String(name) = &data["name"] {
         if let JsonValue::String(source) = &data["source"] {
-            result.push_str(
-                &format!("### {} ###\n{}", name, source)[..]
-            );
+            result.push_str(&format!("### {} ###\n{}", name, source)[..]);
         }
     }
 
     Ok(result)
 }
 
-
-async fn get_all_templates(url: String, client: &reqwest::Client)
-                           -> Result<Vec<String>, reqwest::Error>
-{
+async fn get_all_templates(
+    url: String,
+    client: &reqwest::Client,
+) -> Result<Vec<String>, reqwest::Error> {
     let body = request_body(url, client).await?;
 
     let mut result: Vec<String> = Vec::new();
