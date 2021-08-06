@@ -1,10 +1,9 @@
-use ansi_term::Colour::{Green, Red};
+use ansi_term::Colour::Red;
 use clap::{Arg, App};
 use reqwest::header::USER_AGENT;
 use serde_json::{self, Value as JsonValue};
 use std::error;
 use std::fmt::{self, Display};
-use std::ops::Add;
 
 #[derive(Debug)]
 enum GIError {
@@ -27,7 +26,7 @@ impl Display for GIError {
                 write!(f, "{} {}", Red.paint("tokio join error:"), e)
             }
             GIError::TemplateNotFound(vec) => {
-                write!(f, "{} {:?}", Red.paint("template not found"), vec)
+                write!(f, "{} template not found {:?}", Red.paint("error:"), vec)
             }
         }
     }
@@ -132,17 +131,12 @@ async fn main() -> Result<(), GIError> {
         }
 
         if !templates_not_found.is_empty() {
-            let usage = String::from(matches.usage())
-                .add("\n\nFor more information try ")
-                .add(&format!("{}", Green.paint("--help")));
-
-            eprintln!(
-                "{} Template(s) not found: {:?}\n\n{}",
-                Red.bold().paint("error:"),
-                templates_not_found,
-                usage
-            );
-
+            // NOTE: printing the error looks nicer than
+            // having the debug structure returned from `main`,
+            // i might rewrite the main function later,
+            // possibly add a library to the project
+            //
+            // eprintln!("{}", GIError::TemplateNotFound(templates_not_found.clone()));
             return Err(GIError::TemplateNotFound(templates_not_found));
         }
 
