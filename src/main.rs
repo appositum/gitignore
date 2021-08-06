@@ -76,7 +76,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         if !templates_not_found.is_empty() {
             let usage = String::from(matches.usage())
                 .add("\n\nFor more information try ")
-                .add(&format!("{}", Green.paint("--help"))[..]);
+                .add(&format!("{}", Green.paint("--help")));
 
             eprintln!(
                 "{} Template(s) not found: {:?}\n\n{}",
@@ -98,7 +98,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 // but types are mistmatching. getting rid of this repetition,
                 // we can drop the `urls` variable and use `get_template` instead
                 tokio::spawn(async move {
-                    println!("requesting {}", url);
                     client
                         .get(url)
                         .header(USER_AGENT, "gitignore.rs")
@@ -123,7 +122,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     return Ok(());
                 }
                 Ok(Ok(b)) => {
-                    let template = serde_json::from_str(&b[..])?;
+                    let template = serde_json::from_str(&b)?;
                     templates.push(template);
                 }
             }
@@ -168,7 +167,7 @@ async fn _get_template(name: String, client: &reqwest::Client) -> Result<String,
     // TODO: make an error type to englobe both reqwest and serde errors
     if let JsonValue::String(name) = &data["name"] {
         if let JsonValue::String(source) = &data["source"] {
-            result.push_str(&format!("### {} ###\n{}", name, source)[..]);
+            result.push_str(&format!("### {} ###\n{}", name, source));
         }
     }
 
