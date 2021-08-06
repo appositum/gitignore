@@ -70,7 +70,7 @@ async fn main() -> Result<(), GIError> {
     let client = reqwest::Client::new();
 
     // `client.get` consumes the String
-    let templates: Vec<String> = get_all_templates(api.clone(), &client).await?;
+    let templates: Vec<String> = get_all_templates(&client).await?;
 
     if matches.is_present("list") {
         for t in templates {
@@ -106,7 +106,7 @@ async fn main() -> Result<(), GIError> {
             .map(|url| {
                 let client = client.clone();
 
-                // TODO: use `request_body` instead of this block,
+                // TODO: use `request_api` instead of this block,
                 // but types are mistmatching. getting rid of this repetition,
                 // we can drop the `urls` variable and use `get_template` instead
                 tokio::spawn(async move {
@@ -151,7 +151,17 @@ async fn main() -> Result<(), GIError> {
     Ok(())
 }
 
-async fn request_body(url: String, client: &reqwest::Client) -> Result<String, reqwest::Error> {
+async fn request_api(
+    client: &reqwest::Client,
+    template_name: Option<String>,
+) -> Result<String, reqwest::Error> {
+    let api = String::from("https://api.github.com/gitignore/templates");
+
+    let url = match template_name {
+        None => api,
+        Some(template) => format!("{}/{}", api, template),
+    };
+
     Ok(client
         .get(url)
         .header(USER_AGENT, "gitignore.rs")
@@ -161,15 +171,8 @@ async fn request_body(url: String, client: &reqwest::Client) -> Result<String, r
         .await?)
 }
 
-async fn _get_template(name: String, client: &reqwest::Client) -> Result<String, GIError> {
-    // NOTE: this looks disgusting. i define this api link in the main function
-    // and pass it around as argument to the other request functions.
-    // in this `get_template` case, i want to be able to pass only the name of the template
-    // and have the api link be implicit, but it's inconsistent
-    // with the way the other functions work. gonna figure out a better way
-    // to design this. perhaps hardcode the link into the request_body function?
-    let url = format!("https://api.github.com/gitignore/templates/{}", name);
-    let body = request_body(url, client).await?;
+async fn _get_template(client: &reqwest::Client, template_name: String) -> Result<String, GIError> {
+    let body = request_api(client, Some(template_name)).await?;
 
     let data: JsonValue = serde_json::from_str(&body)?;
     let mut result = String::new();
@@ -183,8 +186,8 @@ async fn _get_template(name: String, client: &reqwest::Client) -> Result<String,
     Ok(result)
 }
 
-async fn get_all_templates(url: String, client: &reqwest::Client) -> Result<Vec<String>, GIError> {
-    let body = request_body(url, client).await?;
+async fn get_all_templates(client: &reqwest::Client) -> Result<Vec<String>, GIError> {
+    let body = request_api(client, None).await?;
 
     let mut result: Vec<String> = Vec::new();
 
