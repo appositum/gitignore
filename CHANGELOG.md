@@ -8,10 +8,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Load CLI arguments via `yaml` file
 - `GIError` type wrapper for better error handling
+- New `pretty_print` function outputs all templates separated in 3 columns
 
 ### Changed
 - Split certain logics into functions (mostly HTTP requests, though some further work needs to be done)
 - `request_api` now carries the hardcoded API link. A specific template can be fetched by specifying the name as an `Option<String>`
+- `req` as alias for `reqwest`
 - New `get_bodies` function handles the tokio tasks
 
 ## [0.1.0] - 2021-08-03
