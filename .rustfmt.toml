@@ -1,3 +1,4 @@
 edition = "2018"
 indent_style = "Block"
 reorder_imports = false
+max_width = 90
