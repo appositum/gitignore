@@ -1,14 +1,15 @@
 use ansi_term::Colour::Red;
 use clap::{App, load_yaml};
-use reqwest::header::USER_AGENT;
+use req::header::USER_AGENT;
 use serde_json::{self, Value as JsonValue};
 use std::error;
 use std::fmt::{self, Display};
+use reqwest as req;
 
 #[derive(Debug)]
 enum GIError {
     Json(serde_json::Error),
-    Request(reqwest::Error),
+    Request(req::Error),
     TaskJoin(tokio::task::JoinError),
     TemplateNotFound(Vec<String>),
 }
@@ -49,8 +50,8 @@ impl From<serde_json::Error> for GIError {
     }
 }
 
-impl From<reqwest::Error> for GIError {
-    fn from(err: reqwest::Error) -> GIError {
+impl From<req::Error> for GIError {
+    fn from(err: req::Error) -> GIError {
         GIError::Request(err)
     }
 }
@@ -66,29 +67,28 @@ async fn main() -> Result<(), GIError> {
     let yaml = load_yaml!("cli.yml");
     let matches = App::from(yaml).get_matches();
 
-    let api = String::from("https://api.github.com/gitignore/templates");
-    let client = reqwest::Client::new();
+    let client = req::Client::new();
 
     // `client.get` consumes the String
-    let templates: Vec<String> = get_all_templates(&client).await?;
+    let all_templates: Vec<String> = get_all_templates(&client).await?;
 
     if matches.is_present("list") {
-        for t in templates {
-            println!("{}", t);
-        }
+        pretty_print(all_templates);
 
         return Ok(());
     }
 
     if let Some(ts) = matches.value_of("templates") {
-        let templates_input = ts.split(',').map(String::from);
-        let urls = templates_input.clone().map(|t| format!("{}/{}", api, t));
+        // this needs to be a vector so we can iterate through the values as references,
+        // that way, the for loop wont consume it. also, we're gonna pass this to
+        // `get_bodies`, which takes a vector anyway.
+        let templates_input: Vec<String> = ts.split(',').map(String::from).collect();
 
         let mut templates_not_found: Vec<String> = Vec::new();
 
-        for t in templates_input {
-            if !templates.contains(&t) {
-                templates_not_found.push(t);
+        for t in &templates_input {
+            if !all_templates.contains(t) {
+                templates_not_found.push(t.clone());
             }
         }
 
@@ -96,49 +96,16 @@ async fn main() -> Result<(), GIError> {
             // NOTE: printing the error looks nicer than
             // having the debug structure returned from `main`,
             // i might rewrite the main function later,
-            // possibly add a library to the project
+            // and add a library to the project
             //
             // eprintln!("{}", GIError::TemplateNotFound(templates_not_found.clone()));
             return Err(GIError::TemplateNotFound(templates_not_found));
         }
 
-        let bodies: Vec<_> = urls
-            .map(|url| {
-                let client = client.clone();
+        let result_templates: Vec<JsonValue> =
+            get_bodies(&client, templates_input).await?;
 
-                // TODO: use `request_api` instead of this block,
-                // but types are mistmatching. getting rid of this repetition,
-                // we can drop the `urls` variable and use `get_template` instead
-                tokio::spawn(async move {
-                    client
-                        .get(url)
-                        .header(USER_AGENT, "gitignore.rs")
-                        .send()
-                        .await?
-                        .text()
-                        .await
-                })
-            })
-            .collect();
-
-        let mut templates: Vec<JsonValue> = Vec::new();
-
-        for body in bodies {
-            match body.await {
-                Err(e) => {
-                    return Err(GIError::TaskJoin(e));
-                }
-                Ok(Err(e)) => {
-                    return Err(GIError::Request(e));
-                }
-                Ok(Ok(b)) => {
-                    let template = serde_json::from_str(&b)?;
-                    templates.push(template);
-                }
-            }
-        }
-
-        for t in templates {
+        for t in result_templates {
             if let JsonValue::String(name) = &t["name"] {
                 if let JsonValue::String(source) = &t["source"] {
                     // git ignore copypasta output
@@ -152,9 +119,9 @@ async fn main() -> Result<(), GIError> {
 }
 
 async fn request_api(
-    client: &reqwest::Client,
+    client: &req::Client,
     template_name: Option<String>,
-) -> Result<String, reqwest::Error> {
+) -> Result<req::Response, req::Error> {
     let api = String::from("https://api.github.com/gitignore/templates");
 
     let url = match template_name {
@@ -166,13 +133,18 @@ async fn request_api(
         .get(url)
         .header(USER_AGENT, "gitignore.rs")
         .send()
-        .await?
-        .text()
         .await?)
 }
 
-async fn _get_template(client: &reqwest::Client, template_name: String) -> Result<String, GIError> {
-    let body = request_api(client, Some(template_name)).await?;
+// NOTE: i'll probably copy-paste this bit of code into `get_bodies`
+async fn _get_template(
+    client: &req::Client,
+    template_name: String,
+) -> Result<String, GIError> {
+    let body = request_api(client, Some(template_name))
+        .await?
+        .text()
+        .await?;
 
     let data: JsonValue = serde_json::from_str(&body)?;
     let mut result = String::new();
@@ -186,8 +158,8 @@ async fn _get_template(client: &reqwest::Client, template_name: String) -> Resul
     Ok(result)
 }
 
-async fn get_all_templates(client: &reqwest::Client) -> Result<Vec<String>, GIError> {
-    let body = request_api(client, None).await?;
+async fn get_all_templates(client: &req::Client) -> Result<Vec<String>, GIError> {
+    let body = request_api(client, None).await?.text().await?;
 
     let mut result: Vec<String> = Vec::new();
 
@@ -200,4 +172,78 @@ async fn get_all_templates(client: &reqwest::Client) -> Result<Vec<String>, GIEr
     }
 
     Ok(result)
+}
+
+async fn get_bodies(
+    client: &req::Client,
+    template_list: Vec<String>,
+) -> Result<Vec<JsonValue>, GIError> {
+    let mut templates: Vec<JsonValue> = Vec::new();
+
+    let bodies: Vec<_> = template_list
+        .into_iter()
+        .map(|t| {
+            let client = client.clone();
+
+            tokio::spawn(async move { request_api(&client, Some(t)).await?.text().await })
+        })
+        .collect();
+
+    for body in bodies {
+        match body.await {
+            Err(e) => return Err(GIError::TaskJoin(e)),
+            Ok(Err(e)) => return Err(GIError::Request(e)),
+            Ok(Ok(b)) => {
+                let template = serde_json::from_str(&b)?;
+                templates.push(template);
+            }
+        }
+    }
+
+    Ok(templates)
+}
+
+// NOTE: i wonder if there's a prettier way to write this function.
+// the amount of `.clone()` bothers me
+fn pretty_print(list: Vec<String>) {
+    // [1, 2, 3, 4, 5, 6, 7] -> [[1, 2, 3], [4, 5, 6], [7]]
+    let chunks = list.chunks(3);
+
+    // get length of the biggest string from subgroup
+    let max1 = chunks
+        .clone()
+        .map(|subgroup| subgroup[0].len())
+        .max()
+        .unwrap();
+
+    let max2 = chunks
+        .clone()
+        .map(|subgroup| {
+            if subgroup.len() < 2 {
+                subgroup[0].len()
+            } else {
+                subgroup[1].len()
+            }
+        })
+        .max()
+        .unwrap();
+
+    // turn into a Vec<(&str, &str, &str)>
+    chunks
+        .map(|subgroup| {
+            if subgroup.len() == 1 {
+                (subgroup[0].clone(), String::new(), String::new())
+            } else if subgroup.len() == 2 {
+                (subgroup[0].clone(), subgroup[1].clone(), String::new())
+            } else {
+                (
+                    subgroup[0].clone(),
+                    subgroup[1].clone(),
+                    subgroup[2].clone(),
+                )
+            }
+        })
+        .for_each(|(x, y, z)| {
+            println!("{:<w1$}\t{:<w2$}\t{}", x, y, z, w1 = max1, w2 = max2);
+        })
 }
