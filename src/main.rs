@@ -1,10 +1,11 @@
 use ansi_term::Colour::Red;
 use clap::{App, load_yaml};
-use req::header::USER_AGENT;
-use serde_json::{self, Value as JsonValue};
+use reqwest as req;
+use reqwest::header::USER_AGENT;
+use serde::Deserialize;
+use serde_json::{self, from_str as to_json};
 use std::error;
 use std::fmt::{self, Display};
-use reqwest as req;
 
 #[derive(Debug)]
 enum GIError {
@@ -13,6 +14,17 @@ enum GIError {
     TaskJoin(tokio::task::JoinError),
     TemplateNotFound(Vec<String>),
 }
+
+#[derive(Deserialize, Debug)]
+struct Template {
+    name: String,
+    source: String,
+}
+
+// only using this to deserialize the json array we get
+// from requesting the first API endpoint with all templates
+#[derive(Deserialize, Debug)]
+struct TemplateList(Vec<String>);
 
 impl Display for GIError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -69,8 +81,7 @@ async fn main() -> Result<(), GIError> {
 
     let client = req::Client::new();
 
-    // `client.get` consumes the String
-    let all_templates: Vec<String> = get_all_templates(&client).await?;
+    let all_templates: Vec<String> = get_template_list(&client).await?;
 
     if matches.is_present("list") {
         pretty_print(all_templates);
@@ -81,7 +92,7 @@ async fn main() -> Result<(), GIError> {
     if let Some(ts) = matches.value_of("templates") {
         // this needs to be a vector so we can iterate through the values as references,
         // that way, the for loop wont consume it. also, we're gonna pass this to
-        // `get_bodies`, which takes a vector anyway.
+        // `get_templates`, which takes a vector anyway.
         let templates_input: Vec<String> = ts.split(',').map(String::from).collect();
 
         let mut templates_not_found: Vec<String> = Vec::new();
@@ -102,17 +113,12 @@ async fn main() -> Result<(), GIError> {
             return Err(GIError::TemplateNotFound(templates_not_found));
         }
 
-        let result_templates: Vec<JsonValue> =
-            get_bodies(&client, templates_input).await?;
-
-        for t in result_templates {
-            if let JsonValue::String(name) = &t["name"] {
-                if let JsonValue::String(source) = &t["source"] {
-                    // git ignore copypasta output
-                    println!("### {} ###\n{}", name, source);
-                }
-            }
-        }
+        get_templates(&client, templates_input)
+            .await?
+            .into_iter()
+            .for_each(|t| {
+                println!("### {} ###\n{}", t.name, t.source);
+            });
     }
 
     Ok(())
@@ -136,49 +142,18 @@ async fn request_api(
         .await?)
 }
 
-// NOTE: i'll probably copy-paste this bit of code into `get_bodies`
-async fn _get_template(
-    client: &req::Client,
-    template_name: String,
-) -> Result<String, GIError> {
-    let body = request_api(client, Some(template_name))
-        .await?
-        .text()
-        .await?;
-
-    let data: JsonValue = serde_json::from_str(&body)?;
-    let mut result = String::new();
-
-    if let JsonValue::String(name) = &data["name"] {
-        if let JsonValue::String(source) = &data["source"] {
-            result.push_str(&format!("### {} ###\n{}", name, source));
-        }
-    }
-
-    Ok(result)
-}
-
-async fn get_all_templates(client: &req::Client) -> Result<Vec<String>, GIError> {
+async fn get_template_list(client: &req::Client) -> Result<Vec<String>, GIError> {
     let body = request_api(client, None).await?.text().await?;
+    let data: TemplateList = to_json(&body)?;
 
-    let mut result: Vec<String> = Vec::new();
-
-    if let JsonValue::Array(ts) = serde_json::from_str(&body)? {
-        for t in ts {
-            if let JsonValue::String(s) = t {
-                result.push(s);
-            }
-        }
-    }
-
-    Ok(result)
+    Ok(data.0)
 }
 
-async fn get_bodies(
+async fn get_templates(
     client: &req::Client,
     template_list: Vec<String>,
-) -> Result<Vec<JsonValue>, GIError> {
-    let mut templates: Vec<JsonValue> = Vec::new();
+) -> Result<Vec<Template>, GIError> {
+    let mut templates: Vec<Template> = Vec::new();
 
     let bodies: Vec<_> = template_list
         .into_iter()
@@ -194,7 +169,7 @@ async fn get_bodies(
             Err(e) => return Err(GIError::TaskJoin(e)),
             Ok(Err(e)) => return Err(GIError::Request(e)),
             Ok(Ok(b)) => {
-                let template = serde_json::from_str(&b)?;
+                let template: Template = to_json(&b)?;
                 templates.push(template);
             }
         }
