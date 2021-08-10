@@ -1,13 +1,13 @@
 use clap::{App, load_yaml};
+
 use gitignore::{self as gi, GIError};
-use reqwest as req;
 
 #[tokio::main]
 async fn main() -> Result<(), GIError> {
     let yaml = load_yaml!("cli.yml");
     let matches = App::from(yaml).get_matches();
 
-    let client = req::Client::new();
+    let client = reqwest::Client::new();
 
     let all_templates: Vec<String> = gi::get_template_list(&client).await?;
 
