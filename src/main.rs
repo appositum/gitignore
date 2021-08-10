@@ -181,7 +181,7 @@ async fn get_templates(
 // NOTE: i wonder if there's a prettier way to write this function.
 // the amount of `.clone()` bothers me
 fn pretty_print(list: Vec<String>) {
-    // [1, 2, 3, 4, 5, 6, 7] -> [[1, 2, 3], [4, 5, 6], [7]]
+    // ["a", "b", "c", "d", "e", "f", "g"] -> [["a", "b", "c"], ["d", "e", "f"], ["g"]]
     let chunks = list.chunks(3);
 
     // get length of the biggest string from subgroup
@@ -204,6 +204,7 @@ fn pretty_print(list: Vec<String>) {
         .unwrap();
 
     // turn into a Vec<(&str, &str, &str)>
+    // [["a", "b", "c"], ["d", "e", "f"], ["g"]] -> [("a", "b", "c"), ("d", "e", "f"), ("g", "", "")]
     chunks
         .map(|subgroup| {
             if subgroup.len() == 1 {
