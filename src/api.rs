@@ -3,7 +3,6 @@ use reqwest as req;
 use reqwest::header::USER_AGENT;
 use serde::Deserialize;
 use serde_json::from_str as to_json;
-use std::{thread, time};
 
 #[derive(Deserialize, Debug)]
 pub struct Template {
