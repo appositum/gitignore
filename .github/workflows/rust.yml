@@ -16,11 +16,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Nightly
-      run: rustup default nightly && rustup component add rustfmt
     - name: Build
       run: cargo build --verbose
     - name: Run tests
       run: cargo test --verbose
     - name: Run formatter check
-      run: cargo +nightly fmt -- --check -v
+      run: cargo fmt -- --check -v
