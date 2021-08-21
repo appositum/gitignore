@@ -41,12 +41,33 @@ async fn main() -> Result<(), GIError> {
             return Err(GIError::TemplateNotFound(templates_not_found));
         }
 
+        let mut output = String::new();
+        let mut print_output = true;
+
         gi::get_templates(&client, templates_input)
             .await?
             .into_iter()
             .for_each(|t| {
-                println!("### {} ###\n{}", t.name, t.source);
+                output.push_str(&format!("### {} ###\n{}", t.name, t.source));
             });
+
+        if matches.is_present("file") {
+            gi::overwrite(output.clone());
+            print_output = false;
+        } else if matches.is_present("append") {
+            gi::append(output.clone());
+            print_output = false;
+        }
+
+        if let Some(path) = matches.value_of("output") {
+            gi::output(output.clone(), path.to_string());
+            print_output = false;
+        }
+
+        // idk about this lol
+        if print_output {
+            println!("{}", output);
+        }
     }
 
     Ok(())
