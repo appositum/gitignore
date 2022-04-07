@@ -26,3 +26,5 @@ args:
         short: o
         long: output
         takes_value: true
+        min_values: 0
+        max_values: 1
