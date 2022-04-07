@@ -51,7 +51,7 @@ async fn main() -> Result<(), GIError> {
                 output.push_str(&format!("### {} ###\n{}", t.name, t.source));
             });
 
-        if matches.is_present("file") {
+        if matches.is_present("force") {
             gi::overwrite(output.clone());
             print_output = false;
         } else if matches.is_present("append") {
