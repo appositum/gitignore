@@ -26,11 +26,14 @@ async fn request_api(
         Some(template) => format!("{}/{}", api, template),
     };
 
-    Ok(client
-        .get(url)
-        .header(USER_AGENT, "gitignore.rs")
-        .send()
-        .await?)
+    let client_request = client.get(url).header(USER_AGENT, "gitignore.rs");
+
+    Ok(match std::env::var("GITHUB_TOKEN") {
+        Err(_) => client_request,
+        Ok(token) => client_request.header("Authorization", format!("Bearer {}", token)),
+    }
+    .send()
+    .await?)
 }
 
 pub async fn get_template_list(client: &req::Client) -> Result<Vec<String>, GIError> {
