@@ -2,8 +2,15 @@ use clap::{App, load_yaml};
 
 use gitignore::{self as gi, GIError};
 
+fn main() {
+    if let Err(e) = run() {
+        eprintln!("{}", e);
+        std::process::exit(1);
+    }
+}
+
 #[tokio::main]
-async fn main() -> Result<(), GIError> {
+async fn run() -> Result<(), GIError> {
     let yaml = load_yaml!("cli.yml");
     let matches = App::from(yaml).get_matches();
 
@@ -32,12 +39,6 @@ async fn main() -> Result<(), GIError> {
         }
 
         if !templates_not_found.is_empty() {
-            // NOTE: printing the error looks nicer than
-            // having the debug structure returned from `main`,
-            // i might rewrite the main function later,
-            // and add a library to the project
-            //
-            // eprintln!("{}", GIError::TemplateNotFound(templates_not_found.clone()));
             return Err(GIError::TemplateNotFound(templates_not_found));
         }
 
