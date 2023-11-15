@@ -11,12 +11,12 @@ pub fn flag_append(text: String) {
     file.write_all(format!("{}\n", text).as_bytes()).unwrap();
 }
 
-pub fn flag_output(text: String, filename: String) {
+pub fn flag_output(text: String, filename: &str) {
     let mut file = File::create(filename).unwrap();
 
     file.write_all(format!("{}\n", text).as_bytes()).unwrap();
 }
 
 pub fn flag_overwrite(text: String) {
-    flag_output(text, ".gitignore".to_string())
+    flag_output(text, ".gitignore")
 }

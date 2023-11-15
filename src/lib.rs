@@ -58,7 +58,7 @@ pub async fn run() -> Result<(), GIError> {
         }
 
         if let Some(path) = matches.value_of("output") {
-            cli::flag_output(output.clone(), path.to_string());
+            cli::flag_output(output.clone(), path);
             print_output = false;
         }
 
