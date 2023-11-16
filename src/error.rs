@@ -24,7 +24,13 @@ impl Display for GIError {
                 write!(f, "{} {}", Red.paint("tokio join error:"), e)
             }
             GIError::TemplateNotFound(vec) => {
-                write!(f, "{} template not found {:?}", Red.paint("error:"), vec)
+                let templates = vec
+                    .into_iter()
+                    .map(|t| format!("  {}", t))
+                    .collect::<Vec<String>>()
+                    .join("\n");
+
+                write!(f, "{} template(s) not found:\n{}", Red.paint("error:"), templates)
             }
         }
     }
