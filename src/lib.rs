@@ -104,6 +104,6 @@ pub fn pretty_print(input: Vec<String>) {
     chunks
         .iter()
         .for_each(|chunk| {
-            println!("{:<w1$}\t{:<w2$}\t{}", chunk[0], chunk[1], chunk[2], w1 = max1, w2 = max2);
+            println!("{:<w1$} {:<w2$} {}", chunk[0], chunk[1], chunk[2], w1 = max1, w2 = max2);
         })
 }
