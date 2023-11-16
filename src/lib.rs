@@ -101,9 +101,14 @@ pub fn pretty_print(input: Vec<String>) {
         .max()
         .unwrap();
 
-    chunks
-        .iter()
-        .for_each(|chunk| {
-            println!("{:<w1$} {:<w2$} {}", chunk[0], chunk[1], chunk[2], w1 = max1, w2 = max2);
-        })
+    chunks.iter().for_each(|chunk| {
+        println!(
+            "{:<w1$} {:<w2$} {}",
+            chunk[0],
+            chunk[1],
+            chunk[2],
+            w1 = max1,
+            w2 = max2
+        );
+    })
 }

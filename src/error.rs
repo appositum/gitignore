@@ -30,7 +30,12 @@ impl Display for GIError {
                     .collect::<Vec<String>>()
                     .join("\n");
 
-                write!(f, "{} template(s) not found:\n{}", Red.paint("error:"), templates)
+                write!(
+                    f,
+                    "{} template(s) not found:\n{}",
+                    Red.paint("error:"),
+                    templates
+                )
             }
         }
     }
