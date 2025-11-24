@@ -34,10 +34,17 @@ impl Display for GIError {
                     .collect::<Vec<String>>()
                     .join("\n");
 
+                let template_word = if vec.len() == 1 {
+                    "template"
+                } else {
+                    "templates"
+                };
+
                 write!(
                     f,
-                    "{} template(s) not found:\n{}",
+                    "{} {} not found:\n{}",
                     Red.paint("error:"),
+                    template_word,
                     templates
                 )
             },
