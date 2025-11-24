@@ -1,6 +1,10 @@
-use ansi_term::Color::Red;
-use std::fmt::{self, Display};
 use std::error;
+use std::fmt::{
+    self,
+    Display,
+};
+
+use ansi_term::Color::Red;
 use tokio::task;
 
 #[derive(Debug)]
@@ -16,13 +20,13 @@ impl Display for GIError {
         match self {
             GIError::Json(e) => {
                 write!(f, "{} {}", Red.paint("json parse error:"), e)
-            }
+            },
             GIError::Request(e) => {
                 write!(f, "{} {}", Red.paint("request error:"), e)
-            }
+            },
             GIError::TaskJoin(e) => {
                 write!(f, "{} {}", Red.paint("tokio join error:"), e)
-            }
+            },
             GIError::TemplateNotFound(vec) => {
                 let templates = vec
                     .into_iter()
@@ -36,7 +40,7 @@ impl Display for GIError {
                     Red.paint("error:"),
                     templates
                 )
-            }
+            },
         }
     }
 }

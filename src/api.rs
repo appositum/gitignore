@@ -1,4 +1,5 @@
 use crate::error::GIError;
+
 use reqwest as req;
 use reqwest::header::USER_AGENT;
 use serde::Deserialize;
@@ -65,7 +66,7 @@ pub async fn get_templates(
             Ok(Ok(b)) => {
                 let template: Template = to_json(&b)?;
                 templates.push(template);
-            }
+            },
         }
     }
 

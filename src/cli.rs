@@ -1,4 +1,7 @@
-use std::fs::{File, OpenOptions};
+use std::fs::{
+    File,
+    OpenOptions,
+};
 use std::io::Write;
 
 pub fn flag_append(text: String) {

@@ -2,11 +2,14 @@ mod api;
 mod cli;
 mod error;
 
-use error::GIError;
+use crate::error::GIError;
 
 use std::ops::Rem;
 
-use clap::{App, load_yaml};
+use clap::{
+    load_yaml,
+    App,
+};
 
 #[tokio::main]
 pub async fn run() -> Result<(), GIError> {
