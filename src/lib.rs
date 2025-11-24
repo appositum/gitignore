@@ -76,7 +76,7 @@ pub async fn run() -> Result<(), GIError> {
     Ok(())
 }
 
-pub fn pretty_print(input: Vec<String>) {
+fn pretty_print(input: Vec<String>) {
     let mut list = input.clone();
 
     // add empty strings to make sure we can split into exactly 3 size chunks

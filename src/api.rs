@@ -16,27 +16,6 @@ pub struct Template {
 #[derive(Deserialize, Debug)]
 struct TemplateList(Vec<String>);
 
-async fn request_api(
-    client: &req::Client,
-    template_name: Option<String>,
-) -> Result<req::Response, req::Error> {
-    let api = String::from("https://api.github.com/gitignore/templates");
-
-    let url = match template_name {
-        None => api,
-        Some(template) => format!("{}/{}", api, template),
-    };
-
-    let client_request = client.get(url).header(USER_AGENT, "gitignore.rs");
-
-    Ok(match std::env::var("GITHUB_TOKEN") {
-        Err(_) => client_request,
-        Ok(token) => client_request.header("Authorization", format!("Bearer {}", token)),
-    }
-    .send()
-    .await?)
-}
-
 pub async fn get_template_list(client: &req::Client) -> Result<Vec<String>, GIError> {
     let body = request_api(client, None).await?.text().await?;
     let data: TemplateList = to_json(&body)?;
@@ -71,4 +50,25 @@ pub async fn get_templates(
     }
 
     Ok(templates)
+}
+
+async fn request_api(
+    client: &req::Client,
+    template_name: Option<String>,
+) -> Result<req::Response, req::Error> {
+    let api = String::from("https://api.github.com/gitignore/templates");
+
+    let url = match template_name {
+        None => api,
+        Some(template) => format!("{}/{}", api, template),
+    };
+
+    let client_request = client.get(url).header(USER_AGENT, "gitignore.rs");
+
+    Ok(match std::env::var("GITHUB_TOKEN") {
+        Err(_) => client_request,
+        Ok(token) => client_request.header("Authorization", format!("Bearer {}", token)),
+    }
+    .send()
+    .await?)
 }
