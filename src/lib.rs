@@ -4,11 +4,14 @@ mod error;
 
 use crate::error::GIError;
 
-use std::ops::Rem;
+use std::{
+    collections::HashMap,
+    ops::Rem,
+};
 
 use clap::{
-    load_yaml,
     App,
+    load_yaml,
 };
 
 #[tokio::main]
@@ -26,19 +29,35 @@ pub async fn run() -> Result<(), GIError> {
         return Ok(());
     }
 
+    // we use this map to compare the lowercased user input to the lowercased template name.
+    // this is necessary for case insensitivity because the templates name for the API endpoints
+    // are case sensitive.
+    let all_templates_map: HashMap<String, String> = all_templates
+        .into_iter()
+        .map(|t| (t.to_lowercase(), t))
+        // {("adventuregamestudio", "AdventureGameStudio"), ("rust", "Rust"), ...}
+        .collect();
+
     if let Some(ts) = matches.value_of("templates") {
+        let mut templates_not_found: Vec<String> = Vec::new();
+
         // this needs to be a vector so we can iterate through the values as references,
         // that way, the for loop wont consume it. also, we're gonna pass this to
         // `get_templates`, which takes a vector anyway.
-        let templates_input: Vec<String> = ts.split(',').map(String::from).collect();
+        let templates_input: Vec<String> = ts
+            .split(',')
+            .fold(vec![], |mut acc, template| {
+                let template_lowercase = template.to_lowercase();
 
-        let mut templates_not_found: Vec<String> = Vec::new();
+                match all_templates_map.get(&template_lowercase) {
+                    None => templates_not_found.push(String::from(template)),
+                    Some(template_found) => acc.push(template_found.clone()),
+                }
 
-        for t in &templates_input {
-            if !all_templates.contains(t) {
-                templates_not_found.push(t.clone());
-            }
-        }
+                acc
+            })
+            .into_iter()
+            .collect();
 
         if !templates_not_found.is_empty() {
             return Err(GIError::TemplateNotFound(templates_not_found));
@@ -67,7 +86,6 @@ pub async fn run() -> Result<(), GIError> {
             print_output = false;
         }
 
-        // idk about this lol
         if print_output {
             println!("{}", output);
         }
