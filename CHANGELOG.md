@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 ### Removed
 
+## [0.3.0] - 2025-12-08
+### Added
+- Implement output redirection (append, overwrite or output to new file)
+- Implement GitHub API authentication with personal token via `$GITHUB_TOKEN` to avoid exceeding rate limits
+- Case insensitivity for template list input
+### Changed
+- Refactor main function to pretty print errors (`tokio::main` is now in a separate function called `run`)
+- Move CLI args treatment to separate file (`cli.rs`)
+- Move `tokion::main` function to `lib.rs`
+- Pretty print `TemplateNotFound` error
+### Removed
+
 ## [0.2.0] - 2021-08-10
 ### Added
 - Load CLI arguments via `yaml` file, better arg parse with `clap`
@@ -24,6 +36,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Project upload (first release)
 
-### [Unreleased](https://github.com/appositum/gitignore/compare/0.2.0...dev)
+### [Unreleased](https://github.com/appositum/gitignore/compare/0.3.0...dev)
+### [0.3.0](https://github.com/appositum/gitignore/releases/tag/0.3.0)
 ### [0.2.0](https://github.com/appositum/gitignore/releases/tag/0.2.0)
 ### [0.1.0](https://github.com/appositum/gitignore/releases/tag/0.1.0)

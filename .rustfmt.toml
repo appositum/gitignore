@@ -1,4 +1,8 @@
-edition = "2018"
-indent_style = "Block"
-reorder_imports = false
-max_width = 90
+imports_indent = "Block"
+imports_layout = "Vertical"
+blank_lines_upper_bound = 1
+empty_item_single_line = false
+force_multiline_blocks = true
+match_arm_leading_pipes = "Preserve"
+match_block_trailing_comma = true
+struct_lit_single_line = false

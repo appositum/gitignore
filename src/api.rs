@@ -1,4 +1,5 @@
 use crate::error::GIError;
+
 use reqwest as req;
 use reqwest::header::USER_AGENT;
 use serde::Deserialize;
@@ -14,24 +15,6 @@ pub struct Template {
 // from requesting the first API endpoint with all templates
 #[derive(Deserialize, Debug)]
 struct TemplateList(Vec<String>);
-
-async fn request_api(
-    client: &req::Client,
-    template_name: Option<String>,
-) -> Result<req::Response, req::Error> {
-    let api = String::from("https://api.github.com/gitignore/templates");
-
-    let url = match template_name {
-        None => api,
-        Some(template) => format!("{}/{}", api, template),
-    };
-
-    Ok(client
-        .get(url)
-        .header(USER_AGENT, "gitignore.rs")
-        .send()
-        .await?)
-}
 
 pub async fn get_template_list(client: &req::Client) -> Result<Vec<String>, GIError> {
     let body = request_api(client, None).await?.text().await?;
@@ -62,9 +45,30 @@ pub async fn get_templates(
             Ok(Ok(b)) => {
                 let template: Template = to_json(&b)?;
                 templates.push(template);
-            }
+            },
         }
     }
 
     Ok(templates)
+}
+
+async fn request_api(
+    client: &req::Client,
+    template_name: Option<String>,
+) -> Result<req::Response, req::Error> {
+    let api = String::from("https://api.github.com/gitignore/templates");
+
+    let url = match template_name {
+        None => api,
+        Some(template) => format!("{}/{}", api, template),
+    };
+
+    let client_request = client.get(url).header(USER_AGENT, "gitignore.rs");
+
+    Ok(match std::env::var("GITHUB_TOKEN") {
+        Err(_) => client_request,
+        Ok(token) => client_request.header("Authorization", format!("Bearer {}", token)),
+    }
+    .send()
+    .await?)
 }

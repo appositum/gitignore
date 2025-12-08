@@ -1,6 +1,6 @@
 name: gitignore.rs
-version: "0.2.0"
-author: ezr <appositum@protonmail.com>
+version: "0.3.0"
+author: appositum <appositum@protonmail.com>
 about: "Fetches .gitignore templates from GitHub's API"
 args:
     - list:
@@ -12,16 +12,19 @@ args:
         index: 1
         required: true
         conflicts_with: list
-    - file:
+    - force:
         help: "Overwrites .gitignore file with output"
         short: f
+        long: force
     - append:
         help: "Appends output to .gitignore file"
         short: a
         long: append
-        conflicts_with: file
+        conflicts_with: force
     - output:
         help: "Redirects output to a file or stream (default: stdout)"
         short: o
         long: output
         takes_value: true
+        min_values: 0
+        max_values: 1
