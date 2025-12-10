@@ -9,21 +9,48 @@ use std::{
     ops::Rem,
 };
 
-use clap::{
-    App,
-    load_yaml,
-};
+use clap::Parser;
+
+#[derive(Parser, Debug)]
+#[command(version, about = "Fetches .gitignore templates from GitHub's API", long_about = None)]
+pub struct Args {
+    #[arg(short, long, action, help = "Requests list of all available templates")]
+    list: bool,
+
+    #[arg(
+        required = true,
+        conflicts_with = "list",
+        num_args = 1..,
+        value_delimiter = ' ',
+        help = "Space separated list of templates. e.g: Rust C  Lua"
+    )]
+    templates: Vec<String>,
+
+    #[arg(short, long, action, help = "Overwrites .gitignore file with output")]
+    force: bool,
+
+    #[arg(
+        short,
+        long,
+        action,
+        conflicts_with = "force",
+        help = "Appends output to .gitignore file"
+    )]
+    append: bool,
+
+    #[arg(short, long, action, help = "Overwrites .gitignore file with output")]
+    output: Option<String>,
+}
 
 #[tokio::main]
 pub async fn run() -> Result<(), GIError> {
-    let yaml = load_yaml!("cli.yml");
-    let matches = App::from(yaml).get_matches();
+    let args = Args::parse();
 
     let client = reqwest::Client::new();
 
     let all_templates: Vec<String> = api::get_template_list(&client).await?;
 
-    if matches.is_present("list") {
+    if args.list {
         pretty_print(all_templates);
 
         return Ok(());
@@ -38,14 +65,12 @@ pub async fn run() -> Result<(), GIError> {
         // {("adventuregamestudio", "AdventureGameStudio"), ("rust", "Rust"), ...}
         .collect();
 
-    if let Some(ts) = matches.value_of("templates") {
+    if !args.templates.is_empty() {
         let mut templates_not_found: Vec<String> = Vec::new();
 
-        // this needs to be a vector so we can iterate through the values as references,
-        // that way, the for loop wont consume it. also, we're gonna pass this to
-        // `get_templates`, which takes a vector anyway.
-        let templates_input: Vec<String> = ts
-            .split(',')
+        let templates_input: Vec<String> = args
+            .templates
+            .iter()
             .fold(vec![], |mut acc, template| {
                 let template_lowercase = template.to_lowercase();
 
@@ -73,15 +98,15 @@ pub async fn run() -> Result<(), GIError> {
                 output.push_str(&format!("### {} ###\n{}", t.name, t.source));
             });
 
-        if matches.is_present("force") {
+        if args.force {
             cli::flag_overwrite(output.clone());
             print_output = false;
-        } else if matches.is_present("append") {
+        } else if args.append {
             cli::flag_append(output.clone());
             print_output = false;
         }
 
-        if let Some(path) = matches.value_of("output") {
+        if let Some(path) = args.output {
             cli::flag_output(output.clone(), path);
             print_output = false;
         }

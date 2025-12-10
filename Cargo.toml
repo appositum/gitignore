@@ -1,13 +1,13 @@
 [package]
 name = "gitignore"
-version = "0.3.0"
+version = "1.0.0"
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 ansi_term = "0.12"
-clap = { version = "2.34", features = ["yaml"] }
+clap = { version = "4", features = ["derive"] }
 reqwest = "0.12"
 tokio = { version = "1.48", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }

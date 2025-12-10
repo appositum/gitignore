@@ -4,10 +4,14 @@ All notable changes to this project will be documented in this file
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [1.0.0] - 2025-12-10
 ### Added
+- `Cargo.lock` file
 ### Changed
+- Bumped `clap` version from 2 to 4
+- Template list input is now space-separated instead of comma-separated
 ### Removed
+- `yaml` feature from `clap` (deprecated in version 4)
 
 ## [0.3.0] - 2025-12-08
 ### Added
@@ -19,7 +23,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Move CLI args treatment to separate file (`cli.rs`)
 - Move `tokion::main` function to `lib.rs`
 - Pretty print `TemplateNotFound` error
-### Removed
 
 ## [0.2.0] - 2021-08-10
 ### Added
@@ -36,7 +39,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Project upload (first release)
 
-### [Unreleased](https://github.com/appositum/gitignore/compare/0.3.0...dev)
+### [Unreleased](https://github.com/appositum/gitignore/compare/1.0.0...dev)
+### [1.0.0](https://github.com/appositum/gitignore/releases/tag/1.0.0)
 ### [0.3.0](https://github.com/appositum/gitignore/releases/tag/0.3.0)
 ### [0.2.0](https://github.com/appositum/gitignore/releases/tag/0.2.0)
 ### [0.1.0](https://github.com/appositum/gitignore/releases/tag/0.1.0)
