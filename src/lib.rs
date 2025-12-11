@@ -38,7 +38,12 @@ pub struct Args {
     )]
     append: bool,
 
-    #[arg(short, long, action, help = "Overwrites .gitignore file with output")]
+    #[arg(
+        short,
+        long,
+        action,
+        help = "Redirects output to a file or stream (default: stdout)"
+    )]
     output: Option<String>,
 }
 
