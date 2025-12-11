@@ -95,8 +95,15 @@ pub async fn run() -> Result<(), GIError> {
             .await?
             .into_iter()
             .for_each(|t| {
-                output.push_str(&format!("### {} ###\n{}", t.name, t.source));
+                output.push_str(&format!("### {} ###\n{}\n\n", t.name, t.source));
             });
+
+        // remove those double newlines at end of string,
+        // we only needed them to separate the different template sections.
+        // the `flag_` funcitons in the `cli` module will add back an EOF newline,
+        // so it's still posix compliant.
+        // (maybe it's good to do it all in one place, though?)
+        output = output.trim().to_string();
 
         if args.force {
             cli::flag_overwrite(output.clone());

@@ -43,7 +43,13 @@ pub async fn get_templates(
             Err(e) => return Err(GIError::TaskJoin(e)),
             Ok(Err(e)) => return Err(GIError::Request(e)),
             Ok(Ok(b)) => {
-                let template: Template = to_json(&b)?;
+                let mut template: Template = to_json(&b)?;
+
+                // we're trimming this because the number of newlines
+                // at the end of the response data is inconsistent.
+                // the C template ends with a single newline,
+                // but the Lua template ends with two newlines.
+                template.source = template.source.trim().to_string();
                 templates.push(template);
             },
         }
