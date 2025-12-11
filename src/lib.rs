@@ -103,12 +103,9 @@ pub async fn run() -> Result<(), GIError> {
                 output.push_str(&format!("### {} ###\n{}\n\n", t.name, t.source));
             });
 
-        // remove those double newlines at end of string,
-        // we only needed them to separate the different template sections.
-        // the `flag_` funcitons in the `cli` module will add back an EOF newline,
-        // so it's still posix compliant.
-        // (maybe it's good to do it all in one place, though?)
-        output = output.trim().to_string();
+        // remove the extra newline at end of string,
+        // we only want two in between template sections.
+        let _extra_newline = output.pop();
 
         if args.force {
             cli::flag_overwrite(output.clone());
@@ -124,7 +121,7 @@ pub async fn run() -> Result<(), GIError> {
         }
 
         if print_output {
-            println!("{}", output);
+            print!("{}", output);
         }
     }
 
