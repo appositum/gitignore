@@ -128,6 +128,9 @@ pub async fn run() -> Result<(), GIError> {
     Ok(())
 }
 
+// TODO: this "pretty print" looks awful and unintuitive.
+// The sorting is weird.
+// Figure out a way to make it better.
 fn pretty_print(input: Vec<String>) {
     let mut list = input.clone();
 

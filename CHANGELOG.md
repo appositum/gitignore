@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.1.0] - 2025-12-11
+### Added
+- `append` now adds newline before inserting text if the gitignore file exists and is not empty
+- Extra newline between different template sections
+### Changed
+- Fixed helper for `output` arg option
+
 ## [1.0.0] - 2025-12-10
 ### Added
 - `Cargo.lock` file
@@ -39,7 +46,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Project upload (first release)
 
-### [Unreleased](https://github.com/appositum/gitignore/compare/1.0.0...dev)
+### [Unreleased](https://github.com/appositum/gitignore/compare/1.1.0...dev)
+### [1.1.0](https://github.com/appositum/gitignore/releases/tag/1.1.0)
 ### [1.0.0](https://github.com/appositum/gitignore/releases/tag/1.0.0)
 ### [0.3.0](https://github.com/appositum/gitignore/releases/tag/0.3.0)
 ### [0.2.0](https://github.com/appositum/gitignore/releases/tag/0.2.0)
