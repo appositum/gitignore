@@ -38,7 +38,12 @@ pub struct Args {
     )]
     append: bool,
 
-    #[arg(short, long, action, help = "Overwrites .gitignore file with output")]
+    #[arg(
+        short,
+        long,
+        action,
+        help = "Redirects output to a file or stream (default: stdout)"
+    )]
     output: Option<String>,
 }
 
@@ -95,8 +100,12 @@ pub async fn run() -> Result<(), GIError> {
             .await?
             .into_iter()
             .for_each(|t| {
-                output.push_str(&format!("### {} ###\n{}", t.name, t.source));
+                output.push_str(&format!("### {} ###\n{}\n\n", t.name, t.source));
             });
+
+        // remove the extra newline at end of string,
+        // we only want two in between template sections.
+        let _extra_newline = output.pop();
 
         if args.force {
             cli::flag_overwrite(output.clone());
@@ -112,13 +121,16 @@ pub async fn run() -> Result<(), GIError> {
         }
 
         if print_output {
-            println!("{}", output);
+            print!("{}", output);
         }
     }
 
     Ok(())
 }
 
+// TODO: this "pretty print" looks awful and unintuitive.
+// The sorting is weird.
+// Figure out a way to make it better.
 fn pretty_print(input: Vec<String>) {
     let mut list = input.clone();
 
