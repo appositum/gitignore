@@ -14,20 +14,26 @@ use clap::Parser;
 #[derive(Parser, Debug)]
 #[command(version, about = "Fetches .gitignore templates from GitHub's API", long_about = None)]
 pub struct Args {
-    #[arg(short, long, action, help = "Requests list of all available templates")]
-    list: bool,
-
     #[arg(
         required = true,
-        conflicts_with = "list",
+        conflicts_with_all = ["list", "search"],
         num_args = 1..,
         value_delimiter = ' ',
         help = "Space separated list of templates. e.g: Rust C  Lua"
     )]
     templates: Vec<String>,
 
-    #[arg(short, long, action, help = "Overwrites .gitignore file with output")]
-    force: bool,
+    #[arg(short, long, action, help = "Requests list of all available templates")]
+    list: bool,
+
+    #[arg(
+        short,
+        long,
+        action,
+        conflicts_with_all = ["list", "force", "append", "output"],
+        help = "Search for templates that match your string"
+    )]
+    search: Option<String>,
 
     #[arg(
         short,
@@ -37,6 +43,9 @@ pub struct Args {
         help = "Appends output to .gitignore file"
     )]
     append: bool,
+
+    #[arg(short, long, action, help = "Overwrites .gitignore file with output")]
+    force: bool,
 
     #[arg(
         short,
