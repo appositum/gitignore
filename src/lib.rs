@@ -79,6 +79,18 @@ pub async fn run() -> Result<(), GIError> {
         // {("adventuregamestudio", "AdventureGameStudio"), ("rust", "Rust"), ...}
         .collect();
 
+    if let Some(search) = args.search {
+        let search_lowercase = search.to_lowercase();
+
+        for (k, v) in all_templates_map {
+            if k.contains(&search_lowercase) {
+                println!("{v}");
+            }
+        }
+
+        return Ok(());
+    }
+
     if !args.templates.is_empty() {
         let mut templates_not_found: Vec<String> = Vec::new();
 
