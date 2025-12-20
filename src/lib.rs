@@ -71,8 +71,8 @@ pub async fn run() -> Result<(), GIError> {
     }
 
     // we use this map to compare the lowercased user input to the lowercased template name.
-    // this is necessary for case insensitivity because the templates name for the API endpoints
-    // are case sensitive.
+    // this is necessary for case insensitivity because
+    // the templates name for the API endpoints are case sensitive.
     let all_templates_map: HashMap<String, String> = all_templates
         .into_iter()
         .map(|t| (t.to_lowercase(), t))
