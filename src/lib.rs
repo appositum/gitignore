@@ -4,10 +4,7 @@ mod error;
 
 use crate::error::GIError;
 
-use std::{
-    collections::HashMap,
-    ops::Rem,
-};
+use std::collections::HashMap;
 
 use ansi_term::Colour::Red;
 use clap::Parser;
@@ -66,8 +63,7 @@ pub async fn run() -> Result<(), GIError> {
     let all_templates: Vec<String> = api::get_template_list(&client).await?;
 
     if args.list {
-        pretty_print(all_templates);
-
+        cli::flag_list(all_templates);
         return Ok(());
     }
 
@@ -163,47 +159,4 @@ pub async fn run() -> Result<(), GIError> {
     }
 
     Ok(())
-}
-
-// TODO: this "pretty print" looks awful and unintuitive.
-// The sorting is weird.
-// Figure out a way to make it better.
-fn pretty_print(input: Vec<String>) {
-    let mut list = input.clone();
-
-    // add empty strings to make sure we can split into exactly 3 size chunks
-    while list.len().rem(3) != 0 {
-        list.push("".to_string());
-    }
-
-    let chunks: Vec<Vec<String>> = list
-        .chunks(3)
-        .collect::<Vec<_>>()
-        .into_iter()
-        .map(|c| c.to_vec())
-        .collect();
-
-    // get length of the biggest string from subgroup
-    let max1 = chunks
-        .iter()
-        .map(|subgroup| subgroup[0].len())
-        .max()
-        .unwrap();
-
-    let max2 = chunks
-        .iter()
-        .map(|subgroup| subgroup[1].len())
-        .max()
-        .unwrap();
-
-    chunks.iter().for_each(|chunk| {
-        println!(
-            "{:<w1$} {:<w2$} {}",
-            chunk[0],
-            chunk[1],
-            chunk[2],
-            w1 = max1,
-            w2 = max2
-        );
-    })
 }
