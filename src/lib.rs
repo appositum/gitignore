@@ -6,7 +6,6 @@ use crate::error::GIError;
 
 use std::collections::HashMap;
 
-use ansi_term::Colour::Red;
 use clap::Parser;
 
 #[derive(Parser, Debug)]
@@ -77,29 +76,7 @@ pub async fn run() -> Result<(), GIError> {
         .collect();
 
     if let Some(search) = args.search {
-        let search_lowercase = search.to_lowercase();
-
-        for (k, v) in all_templates_map {
-            if k.contains(&search_lowercase) {
-                let matched: Vec<_> = k.match_indices(&search_lowercase).collect();
-                let (index_start, _) = matched[0]; // only need the first substring match
-                let index_end = index_start + search_lowercase.len();
-                let matched_substr = &v[index_start..index_end];
-
-                /*
-                $ gitignore -s ara
-                Laravel
-
-                str_start      = Lar
-                matched_substr = ara
-                str_end        = vel
-                */
-                let (str_start, _rest) = v.split_at(index_start);
-                let (_rest, str_end) = v.split_at(index_end);
-                println!("{str_start}{}{str_end}", Red.paint(matched_substr));
-            }
-        }
-
+        cli::flag_search(search, all_templates_map);
         return Ok(());
     }
 

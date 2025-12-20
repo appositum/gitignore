@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs::{
     self,
     File,
@@ -5,6 +6,8 @@ use std::fs::{
 };
 use std::io::Write;
 use std::ops::Rem;
+
+use ansi_term::Colour::Red;
 
 // TODO: this "pretty print" looks awful and unintuitive.
 // The sorting is weird.
@@ -47,6 +50,31 @@ pub fn flag_list(input: Vec<String>) {
             w2 = max2
         );
     })
+}
+
+pub fn flag_search(search: String, templates: HashMap<String, String>) {
+    let search_lowercase = search.to_lowercase();
+
+    for (k, v) in templates {
+        if k.contains(&search_lowercase) {
+            let matched: Vec<_> = k.match_indices(&search_lowercase).collect();
+            let (index_start, _) = matched[0]; // only need the first substring match
+            let index_end = index_start + search_lowercase.len();
+            let matched_substr = &v[index_start..index_end];
+
+            /*
+            $ gitignore -s ara
+            Laravel
+
+            str_start      = Lar
+            matched_substr = ara
+            str_end        = vel
+            */
+            let (str_start, _rest) = v.split_at(index_start);
+            let (_rest, str_end) = v.split_at(index_end);
+            println!("{str_start}{}{str_end}", Red.paint(matched_substr));
+        }
+    }
 }
 
 pub fn flag_append(text: String) {
