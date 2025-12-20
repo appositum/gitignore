@@ -9,47 +9,35 @@ use std::ops::Rem;
 
 use ansi_term::Colour::Red;
 
-// TODO: this "pretty print" looks awful and unintuitive.
-// The sorting is weird.
-// Figure out a way to make it better.
 pub fn flag_list(input: Vec<String>) {
+    // space between columns will be
+    // the size of the longest string
+    let longest: usize = input
+        .iter()
+        .max_by(|s1, s2| s1.len().cmp(&s2.len()))
+        .unwrap()
+        .len();
+
+    // terminal width measured in character count
+    let (terminal_width, _) = term_size::dimensions().unwrap();
+    let number_of_columns = terminal_width / (longest + 1);
+
     let mut list = input.clone();
 
-    // add empty strings to make sure we can split into exactly 3 size chunks
-    while list.len().rem(3) != 0 {
-        list.push("".to_string());
+    // add empty strings to make sure we can
+    // split into exactly <number_of_columns> size chunks
+    while list.len().rem(number_of_columns) != 0 {
+        list.push(String::new());
     }
 
-    let chunks: Vec<Vec<String>> = list
-        .chunks(3)
-        .collect::<Vec<_>>()
-        .into_iter()
-        .map(|c| c.to_vec())
-        .collect();
+    let chunks = list.chunks(number_of_columns);
 
-    // get length of the biggest string from subgroup
-    let max1 = chunks
-        .iter()
-        .map(|subgroup| subgroup[0].len())
-        .max()
-        .unwrap();
-
-    let max2 = chunks
-        .iter()
-        .map(|subgroup| subgroup[1].len())
-        .max()
-        .unwrap();
-
-    chunks.iter().for_each(|chunk| {
-        println!(
-            "{:<w1$} {:<w2$} {}",
-            chunk[0],
-            chunk[1],
-            chunk[2],
-            w1 = max1,
-            w2 = max2
-        );
-    })
+    for chunk in chunks {
+        for c in chunk {
+            print!("{:<w$}", c, w = longest + 1);
+        }
+        print!("\n");
+    }
 }
 
 pub fn flag_search(search: String, templates: HashMap<String, String>) {
