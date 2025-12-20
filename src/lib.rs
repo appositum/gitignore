@@ -9,7 +9,11 @@ use std::collections::HashMap;
 use clap::Parser;
 
 #[derive(Parser, Debug)]
-#[command(version, about = "Fetches .gitignore templates from GitHub's API", long_about = None)]
+#[command(
+    version,
+    about = "Fetches .gitignore templates from GitHub's API",
+    long_about = None
+)]
 pub struct Args {
     #[arg(
         required = true,
