@@ -4,30 +4,37 @@ mod error;
 
 use crate::error::GIError;
 
-use std::{
-    collections::HashMap,
-    ops::Rem,
-};
+use std::collections::HashMap;
 
 use clap::Parser;
 
 #[derive(Parser, Debug)]
-#[command(version, about = "Fetches .gitignore templates from GitHub's API", long_about = None)]
+#[command(
+    version,
+    about = "Fetches .gitignore templates from GitHub's API",
+    long_about = None
+)]
 pub struct Args {
-    #[arg(short, long, action, help = "Requests list of all available templates")]
-    list: bool,
-
     #[arg(
         required = true,
-        conflicts_with = "list",
+        conflicts_with_all = ["list", "search"],
         num_args = 1..,
         value_delimiter = ' ',
         help = "Space separated list of templates. e.g: Rust C  Lua"
     )]
     templates: Vec<String>,
 
-    #[arg(short, long, action, help = "Overwrites .gitignore file with output")]
-    force: bool,
+    #[arg(short, long, action, help = "Requests list of all available templates")]
+    list: bool,
+
+    #[arg(
+        short,
+        long,
+        action,
+        conflicts_with_all = ["list", "force", "append", "output"],
+        help = "Search for templates that match your string"
+    )]
+    search: Option<String>,
 
     #[arg(
         short,
@@ -37,6 +44,9 @@ pub struct Args {
         help = "Appends output to .gitignore file"
     )]
     append: bool,
+
+    #[arg(short, long, action, help = "Overwrites .gitignore file with output")]
+    force: bool,
 
     #[arg(
         short,
@@ -56,19 +66,23 @@ pub async fn run() -> Result<(), GIError> {
     let all_templates: Vec<String> = api::get_template_list(&client).await?;
 
     if args.list {
-        pretty_print(all_templates);
-
+        cli::flag_list(all_templates);
         return Ok(());
     }
 
     // we use this map to compare the lowercased user input to the lowercased template name.
-    // this is necessary for case insensitivity because the templates name for the API endpoints
-    // are case sensitive.
+    // this is necessary for case insensitivity because
+    // the templates name for the API endpoints are case sensitive.
     let all_templates_map: HashMap<String, String> = all_templates
         .into_iter()
         .map(|t| (t.to_lowercase(), t))
         // {("adventuregamestudio", "AdventureGameStudio"), ("rust", "Rust"), ...}
         .collect();
+
+    if let Some(search) = args.search {
+        cli::flag_search(search, all_templates_map);
+        return Ok(());
+    }
 
     if !args.templates.is_empty() {
         let mut templates_not_found: Vec<String> = Vec::new();
@@ -126,47 +140,4 @@ pub async fn run() -> Result<(), GIError> {
     }
 
     Ok(())
-}
-
-// TODO: this "pretty print" looks awful and unintuitive.
-// The sorting is weird.
-// Figure out a way to make it better.
-fn pretty_print(input: Vec<String>) {
-    let mut list = input.clone();
-
-    // add empty strings to make sure we can split into exactly 3 size chunks
-    while list.len().rem(3) != 0 {
-        list.push("".to_string());
-    }
-
-    let chunks: Vec<Vec<String>> = list
-        .chunks(3)
-        .collect::<Vec<_>>()
-        .into_iter()
-        .map(|c| c.to_vec())
-        .collect();
-
-    // get length of the biggest string from subgroup
-    let max1 = chunks
-        .iter()
-        .map(|subgroup| subgroup[0].len())
-        .max()
-        .unwrap();
-
-    let max2 = chunks
-        .iter()
-        .map(|subgroup| subgroup[1].len())
-        .max()
-        .unwrap();
-
-    chunks.iter().for_each(|chunk| {
-        println!(
-            "{:<w1$} {:<w2$} {}",
-            chunk[0],
-            chunk[1],
-            chunk[2],
-            w1 = max1,
-            w2 = max2
-        );
-    })
 }
