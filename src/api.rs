@@ -16,7 +16,9 @@ pub struct Template {
 #[derive(Deserialize, Debug)]
 struct TemplateList(Vec<String>);
 
-pub async fn get_template_list(client: &req::Client) -> Result<Vec<String>, GIError> {
+pub async fn get_template_list(
+    client: &req::Client,
+) -> Result<Vec<String>, GIError> {
     let body = request_api(client, None).await?.text().await?;
     let data: TemplateList = to_json(&body)?;
 
@@ -34,7 +36,9 @@ pub async fn get_templates(
         .map(|t| {
             let client = client.clone();
 
-            tokio::spawn(async move { request_api(&client, Some(t)).await?.text().await })
+            tokio::spawn(async move {
+                request_api(&client, Some(t)).await?.text().await
+            })
         })
         .collect();
 
@@ -73,7 +77,9 @@ async fn request_api(
 
     Ok(match std::env::var("GITHUB_TOKEN") {
         Err(_) => client_request,
-        Ok(token) => client_request.header("Authorization", format!("Bearer {}", token)),
+        Ok(token) => {
+            client_request.header("Authorization", format!("Bearer {}", token))
+        },
     }
     .send()
     .await?)

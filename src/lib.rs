@@ -24,7 +24,12 @@ pub struct Args {
     )]
     templates: Vec<String>,
 
-    #[arg(short, long, action, help = "Requests list of all available templates")]
+    #[arg(
+        short,
+        long,
+        action,
+        help = "Requests list of all available templates"
+    )]
     list: bool,
 
     #[arg(
@@ -45,7 +50,12 @@ pub struct Args {
     )]
     append: bool,
 
-    #[arg(short, long, action, help = "Overwrites .gitignore file with output")]
+    #[arg(
+        short,
+        long,
+        action,
+        help = "Overwrites .gitignore file with output"
+    )]
     force: bool,
 
     #[arg(
@@ -114,7 +124,8 @@ pub async fn run() -> Result<(), GIError> {
             .await?
             .into_iter()
             .for_each(|t| {
-                output.push_str(&format!("### {} ###\n{}\n\n", t.name, t.source));
+                output
+                    .push_str(&format!("### {} ###\n{}\n\n", t.name, t.source));
             });
 
         // remove the extra newline at end of string,

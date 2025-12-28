@@ -6,3 +6,4 @@ force_multiline_blocks = true
 match_arm_leading_pipes = "Preserve"
 match_block_trailing_comma = true
 struct_lit_single_line = false
+max_width = 80
