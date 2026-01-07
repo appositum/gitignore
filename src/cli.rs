@@ -25,7 +25,7 @@ pub fn flag_list(input: Vec<String>) {
     let mut list = input.clone();
 
     // add empty strings to make sure we can
-    // split into exactly <number_of_columns> size chunks
+    // split into exactly <number_of_columns> sized chunks
     while list.len().rem(number_of_columns) != 0 {
         list.push(String::new());
     }

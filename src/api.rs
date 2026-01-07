@@ -1,7 +1,11 @@
 use crate::error::GIError;
 
 use reqwest as req;
-use reqwest::header::USER_AGENT;
+use reqwest::header::{
+    ACCEPT,
+    HeaderMap,
+    USER_AGENT,
+};
 use serde::Deserialize;
 use serde_json::from_str as to_json;
 
@@ -69,7 +73,17 @@ async fn request_api(
         Some(template) => format!("{}/{}", api, template),
     };
 
-    let client_request = client.get(url).header(USER_AGENT, "gitignore.rs");
+    let mut hs = HeaderMap::new();
+    hs.insert(ACCEPT, "application/vnd.github+json".parse().unwrap());
+    hs.insert(
+        USER_AGENT,
+        format!("gitignore.rs {}", env!("CARGO_PKG_VERSION"))
+            .parse()
+            .unwrap(),
+    );
+    hs.insert("X-GitHub-Api-Version", "2022-11-28".parse().unwrap());
+
+    let client_request = client.get(url).headers(hs);
 
     Ok(match std::env::var("GITHUB_TOKEN") {
         Err(_) => client_request,
