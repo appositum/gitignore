@@ -48,7 +48,9 @@ pub fn flag_search(search: String, templates: HashMap<String, String>) {
 
     for (lowercase_template_name, original_template_name) in templates {
         if lowercase_template_name.contains(&search_lowercase) {
-            let matched: Vec<_> = lowercase_template_name.match_indices(&search_lowercase).collect();
+            let matched: Vec<_> = lowercase_template_name
+                .match_indices(&search_lowercase)
+                .collect();
             let (index_start, _) = matched[0]; // only need the first substring match
             let index_end = index_start + search_lowercase.len();
             let matched_substr = &original_template_name[index_start..index_end];
