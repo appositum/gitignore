@@ -40,15 +40,18 @@ pub fn flag_list(input: Vec<String>) {
     }
 }
 
+// `templates` is a map with template names as values
+// and their lowercased version as keys
+// {("adventuregamestudio", "AdventureGameStudio"), ("rust", "Rust"), ...}
 pub fn flag_search(search: String, templates: HashMap<String, String>) {
     let search_lowercase = search.to_lowercase();
 
-    for (k, v) in templates {
-        if k.contains(&search_lowercase) {
-            let matched: Vec<_> = k.match_indices(&search_lowercase).collect();
+    for (lowercase_template_name, original_template_name) in templates {
+        if lowercase_template_name.contains(&search_lowercase) {
+            let matched: Vec<_> = lowercase_template_name.match_indices(&search_lowercase).collect();
             let (index_start, _) = matched[0]; // only need the first substring match
             let index_end = index_start + search_lowercase.len();
-            let matched_substr = &v[index_start..index_end];
+            let matched_substr = &original_template_name[index_start..index_end];
 
             /*
             $ gitignore -s ara
@@ -58,8 +61,8 @@ pub fn flag_search(search: String, templates: HashMap<String, String>) {
             matched_substr = ara
             str_end        = vel
             */
-            let (str_start, _rest) = v.split_at(index_start);
-            let (_rest, str_end) = v.split_at(index_end);
+            let (str_start, _rest) = original_template_name.split_at(index_start);
+            let (_rest, str_end) = original_template_name.split_at(index_end);
             println!("{str_start}{}{str_end}", Red.paint(matched_substr));
         }
     }
