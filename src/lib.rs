@@ -110,7 +110,7 @@ pub async fn run() -> Result<(), GIError> {
         let mut output = String::new();
         let mut print_output = true;
 
-        api::get_templates(&client, templates_input)
+        api::get_template_contents(&client, templates_input)
             .await?
             .into_iter()
             .for_each(|t| {

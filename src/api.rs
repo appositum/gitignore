@@ -27,7 +27,7 @@ pub async fn get_template_list(client: &req::Client) -> Result<Vec<String>, GIEr
     Ok(data.0)
 }
 
-pub async fn get_templates(
+pub async fn get_template_contents(
     client: &req::Client,
     template_list: Vec<String>,
 ) -> Result<Vec<Template>, GIError> {
