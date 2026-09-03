@@ -20,6 +20,37 @@ pub struct Template {
 #[derive(Deserialize, Debug)]
 struct TemplateList(Vec<String>);
 
+async fn request_api(
+    client: &req::Client,
+    template_name: Option<String>,
+) -> Result<req::Response, req::Error> {
+    let api = String::from("https://api.github.com/gitignore/templates");
+
+    let url = match template_name {
+        None => api,
+        Some(template) => format!("{}/{}", api, template),
+    };
+
+    let mut hs = HeaderMap::new();
+    hs.insert(ACCEPT, "application/vnd.github+json".parse().unwrap());
+    hs.insert(
+        USER_AGENT,
+        format!("gitignore.rs {}", env!("CARGO_PKG_VERSION"))
+            .parse()
+            .unwrap(),
+    );
+    hs.insert("X-GitHub-Api-Version", "2022-11-28".parse().unwrap());
+
+    let client_request = client.get(url).headers(hs);
+
+    Ok(match std::env::var("GITHUB_TOKEN") {
+        Err(_) => client_request,
+        Ok(token) => client_request.header("Authorization", format!("Bearer {}", token)),
+    }
+    .send()
+    .await?)
+}
+
 pub async fn get_template_list(client: &req::Client) -> Result<Vec<String>, GIError> {
     let body = request_api(client, None).await?.text().await?;
     let data: TemplateList = to_json(&body)?;
@@ -60,35 +91,4 @@ pub async fn get_template_contents(
     }
 
     Ok(templates)
-}
-
-async fn request_api(
-    client: &req::Client,
-    template_name: Option<String>,
-) -> Result<req::Response, req::Error> {
-    let api = String::from("https://api.github.com/gitignore/templates");
-
-    let url = match template_name {
-        None => api,
-        Some(template) => format!("{}/{}", api, template),
-    };
-
-    let mut hs = HeaderMap::new();
-    hs.insert(ACCEPT, "application/vnd.github+json".parse().unwrap());
-    hs.insert(
-        USER_AGENT,
-        format!("gitignore.rs {}", env!("CARGO_PKG_VERSION"))
-            .parse()
-            .unwrap(),
-    );
-    hs.insert("X-GitHub-Api-Version", "2022-11-28".parse().unwrap());
-
-    let client_request = client.get(url).headers(hs);
-
-    Ok(match std::env::var("GITHUB_TOKEN") {
-        Err(_) => client_request,
-        Ok(token) => client_request.header("Authorization", format!("Bearer {}", token)),
-    }
-    .send()
-    .await?)
 }
