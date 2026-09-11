@@ -1,6 +1,7 @@
 use crate::error::GIError;
 
-use reqwest as req;
+use reqwest::Error as RequestError;
+use reqwest::blocking as req;
 use reqwest::header::{
     ACCEPT,
     HeaderMap,
@@ -20,10 +21,10 @@ pub struct Template {
 #[derive(Deserialize, Debug)]
 struct TemplateList(Vec<String>);
 
-async fn request_api(
+fn request_api(
     client: &req::Client,
     template_name: Option<String>,
-) -> Result<req::Response, req::Error> {
+) -> Result<req::Response, RequestError> {
     let api = String::from("https://api.github.com/gitignore/templates");
 
     let url = match template_name {
@@ -47,47 +48,32 @@ async fn request_api(
         Err(_) => client_request,
         Ok(token) => client_request.header("Authorization", format!("Bearer {}", token)),
     }
-    .send()
-    .await?)
+    .send()?)
 }
 
-pub async fn get_template_list(client: &req::Client) -> Result<Vec<String>, GIError> {
-    let body = request_api(client, None).await?.text().await?;
+pub fn get_template_list(client: &req::Client) -> Result<Vec<String>, GIError> {
+    let body = request_api(client, None)?.text()?;
     let data: TemplateList = to_json(&body)?;
 
     Ok(data.0)
 }
 
-pub async fn get_template_contents(
+pub fn get_template_contents(
     client: &req::Client,
     template_list: Vec<String>,
 ) -> Result<Vec<Template>, GIError> {
     let mut templates: Vec<Template> = Vec::new();
 
-    let bodies: Vec<_> = template_list
-        .into_iter()
-        .map(|t| {
-            let client = client.clone();
+    for t in template_list {
+        let content = request_api(client, Some(t))?.text()?;
 
-            tokio::spawn(async move { request_api(&client, Some(t)).await?.text().await })
-        })
-        .collect();
-
-    for body in bodies {
-        match body.await {
-            Err(e) => return Err(GIError::TaskJoin(e)),
-            Ok(Err(e)) => return Err(GIError::Request(e)),
-            Ok(Ok(b)) => {
-                let mut template: Template = to_json(&b)?;
-
-                // we're trimming this because the number of newlines
-                // at the end of the response data is inconsistent.
-                // the C template ends with a single newline,
-                // but the Lua template ends with two newlines.
-                template.source = template.source.trim().to_string();
-                templates.push(template);
-            },
-        }
+        // we're trimming this because the number of newlines
+        // at the end of the response data is inconsistent.
+        // the C template ends with a single newline,
+        // but the Lua template ends with two newlines.
+        let mut template: Template = to_json(&content)?;
+        template.source = template.source.trim().to_string();
+        templates.push(template);
     }
 
     Ok(templates)

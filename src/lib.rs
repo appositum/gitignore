@@ -7,6 +7,7 @@ use crate::error::GIError;
 use std::collections::HashMap;
 
 use clap::Parser;
+use reqwest::blocking as req;
 
 #[derive(Parser, Debug)]
 #[command(
@@ -57,13 +58,12 @@ pub struct Args {
     output: Option<String>,
 }
 
-#[tokio::main]
-pub async fn run() -> Result<(), GIError> {
+pub fn run() -> Result<(), GIError> {
     let args = Args::parse();
 
-    let client = reqwest::Client::new();
+    let client = req::Client::new();
 
-    let all_templates: Vec<String> = api::get_template_list(&client).await?;
+    let all_templates: Vec<String> = api::get_template_list(&client)?;
 
     if args.list {
         cli::flag_list(all_templates);
@@ -110,8 +110,7 @@ pub async fn run() -> Result<(), GIError> {
         let mut output = String::new();
         let mut print_output = true;
 
-        api::get_template_contents(&client, templates_input)
-            .await?
+        api::get_template_contents(&client, templates_input)?
             .into_iter()
             .for_each(|t| {
                 output.push_str(&format!("### {} ###\n{}\n\n", t.name, t.source));
