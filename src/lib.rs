@@ -1,4 +1,5 @@
 mod api;
+mod cache;
 mod cli;
 mod error;
 
@@ -63,7 +64,15 @@ pub fn run() -> Result<(), GIError> {
 
     let client = req::Client::new();
 
-    let all_templates: Vec<String> = api::get_template_list(&client)?;
+    let cached_list = cache::get_cached_list();
+
+    let all_templates: Vec<String> = if cached_list.is_empty() {
+        let list = api::get_template_list(&client)?;
+        cache::cache_list(&list);
+        list
+    } else {
+        cached_list
+    };
 
     if args.list {
         cli::flag_list(all_templates);

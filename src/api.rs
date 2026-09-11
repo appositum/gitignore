@@ -1,3 +1,4 @@
+use crate::cache;
 use crate::error::GIError;
 
 use reqwest::Error as RequestError;
@@ -23,7 +24,7 @@ struct TemplateList(Vec<String>);
 
 fn request_api(
     client: &req::Client,
-    template_name: Option<String>,
+    template_name: Option<&String>,
 ) -> Result<req::Response, RequestError> {
     let api = String::from("https://api.github.com/gitignore/templates");
 
@@ -65,13 +66,21 @@ pub fn get_template_contents(
     let mut templates: Vec<Template> = Vec::new();
 
     for t in template_list {
-        let content = request_api(client, Some(t))?.text()?;
+        let content: String = match cache::get_cached_template(&t) {
+            Some(cached) => cached,
+            None => {
+                let body = request_api(client, Some(&t))?.text()?;
+                cache::cache_template(&t, &body);
+                body
+            },
+        };
+
+        let mut template: Template = to_json(&content)?;
 
         // we're trimming this because the number of newlines
         // at the end of the response data is inconsistent.
         // the C template ends with a single newline,
         // but the Lua template ends with two newlines.
-        let mut template: Template = to_json(&content)?;
         template.source = template.source.trim().to_string();
         templates.push(template);
     }
