@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.0.0] - 2026-09-11
+### Added
+- Local caching
+### Changed
+- Changed from asynchronous to synchronous requests
+
 ## [1.2.0] - 2025-12-22
 ### Added
 - `search` arg option
@@ -52,7 +58,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Project upload (first release)
 
-### [Unreleased](https://github.com/appositum/gitignore/compare/1.2.0...dev)
+### [Unreleased](https://github.com/appositum/gitignore/compare/2.0.0...dev)
+### [2.0.0](https://github.com/appositum/gitignore/releases/tag/2.0.0)
 ### [1.2.0](https://github.com/appositum/gitignore/releases/tag/1.2.0)
 ### [1.1.0](https://github.com/appositum/gitignore/releases/tag/1.1.0)
 ### [1.0.0](https://github.com/appositum/gitignore/releases/tag/1.0.0)
